@@ -29,6 +29,7 @@
    - Open terminal/command prompt
    - Run these commands:
    ollama pull tinyllama (Small)
+   
    Optional larger models if you have more RAM:
    - ollama pull orca-mini (Medium)
    - ollama pull llama3.2 (Medium-Large)
