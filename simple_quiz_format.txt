@@ -1,0 +1,225 @@
+"""
+Generate a quiz optimized for TinyLlama's capabilities
+"""
+def generate_quiz(self, num_questions: int = 5) -> bool:
+    if not self.context:
+        self.last_error = "No document loaded for quiz generation"
+        return False
+
+    try:
+        # Simplify the prompt for TinyLlama
+        prompt = f"""Create {num_questions} simple multiple choice questions about this text.
+        Keep questions short and straightforward.
+
+        Text: {self.context[:1000]}
+
+        For each question, write exactly in this format:
+        QUESTION: (write the question)
+        A: (first option)
+        B: (second option)
+        C: (third option)
+        D: (fourth option)
+        ANSWER: (write just the letter)
+        WHY: (short explanation)
+
+        START"""
+
+        # Generate questions in smaller batches if needed
+        questions_per_batch = min(3, num_questions)
+        all_questions = []
+
+        for i in range(0, num_questions, questions_per_batch):
+            try:
+                response = ollama.chat(
+                    model=self.model,
+                    messages=[{
+                        "role": "system",
+                        "content": "You are a quiz creator. Generate simple multiple choice questions."
+                    }, {
+                        "role": "user",
+                        "content": f"Generate {questions_per_batch} questions:\n{prompt}"
+                    }],
+                    options={
+                        "temperature": 0.5,  # Lower temperature for more consistent output
+                        "num_ctx": 2048,
+                        "top_p": 0.9,
+                    }
+                )
+
+                batch_questions = self._parse_simple_quiz_response(response['message']['content'])
+                if batch_questions:
+                    all_questions.extend(batch_questions)
+
+            except Exception as e:
+                self.console.print(f"[yellow]Batch generation error: {str(e)}[/yellow]")
+                continue
+
+        # Validate we have at least some questions
+        if len(all_questions) >= 2:  # Accept quiz even if we got fewer questions than requested
+            self.current_quiz = all_questions[:num_questions]  # Limit to requested number
+            self.quiz_active = True
+            self.quiz_progress = 0
+            self.quiz_score = 0
+            self.total_questions = len(self.current_quiz)
+            return True
+        else:
+            self.last_error = f"Could only generate {len(all_questions)} valid questions"
+            return False
+
+    except Exception as e:
+        self.last_error = f"Quiz generation error: {str(e)}"
+        self.console.print(f"[red]Error generating quiz: {str(e)}[/red]")
+        return False
+
+
+def _parse_simple_quiz_response(self, response_text: str) -> List[Dict[str, Any]]:
+    """
+    Parse quiz response with more flexible parsing for TinyLlama's output
+    """
+    try:
+        questions = []
+        current_item = {}
+        current_section = None
+
+        lines = response_text.strip().split('\n')
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Check for section markers
+            if line.startswith('QUESTION:'):
+                if current_item and 'question' in current_item and 'options' in current_item:
+                    questions.append(current_item)
+                current_item = {'options': {}}
+                current_item['question'] = line.replace('QUESTION:', '').strip()
+            elif line.startswith('A:'):
+                current_item['options']['A'] = line.replace('A:', '').strip()
+            elif line.startswith('B:'):
+                current_item['options']['B'] = line.replace('B:', '').strip()
+            elif line.startswith('C:'):
+                current_item['options']['C'] = line.replace('C:', '').strip()
+            elif line.startswith('D:'):
+                current_item['options']['D'] = line.replace('D:', '').strip()
+            elif line.startswith('ANSWER:'):
+                current_item['correct'] = line.replace('ANSWER:', '').strip().upper()
+            elif line.startswith('WHY:'):
+                current_item['explanation'] = line.replace('WHY:', '').strip()
+                if self._validate_simple_question(current_item):
+                    questions.append(current_item)
+                current_item = {}
+
+        # Add last question if complete
+        if current_item and self._validate_simple_question(current_item):
+            questions.append(current_item)
+
+        return questions
+
+    except Exception as e:
+        self.console.print(f"[yellow]Parsing error: {str(e)}[/yellow]")
+        return []
+
+
+def _validate_simple_question(self, question: Dict) -> bool:
+    """
+    Validate quiz question with more lenient requirements for TinyLlama
+    """
+    try:
+        # Check basic structure
+        if not all(key in question for key in ['question', 'options', 'correct']):
+            return False
+
+        # Ensure we have all options
+        if not all(key in question['options'] for key in ['A', 'B', 'C', 'D']):
+            return False
+
+        # Validate correct answer is one of the options
+        if question['correct'] not in ['A', 'B', 'C', 'D']:
+            return False
+
+        # Ensure minimum content
+        if not question['question'] or not all(question['options'].values()):
+            return False
+
+        # If no explanation provided, create a simple one
+        if 'explanation' not in question or not question['explanation']:
+            correct_answer = question['options'][question['correct']]
+            question['explanation'] = f"The correct answer is {question['correct']}: {correct_answer}"
+
+        return True
+
+    except Exception:
+        return False
+
+
+"""
+Render a simplified quiz interface better suited for TinyLlama's output
+"""
+def render_quiz_interface():
+    if not st.session_state.document_loaded:
+        st.warning("📚 Please upload a document first to start a quiz!")
+        return
+
+    # Quiz generation interface
+    if not st.session_state.astra.quiz_active:
+        st.write("### 📝 Generate a New Quiz")
+
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            num_questions = st.slider(
+                "Number of questions",
+                min_value=2,  # Reduced minimum
+                max_value=5,  # Reduced maximum
+                value=3,      # Default to fewer questions
+                help="Choose how many questions you want"
+            )
+
+        with col2:
+            if st.button("Start Quiz", type="primary", use_container_width=True):
+                with st.spinner("Generating quiz..."):
+                    if st.session_state.astra.generate_quiz(num_questions):
+                        st.success("Quiz ready!")
+                    else:
+                        st.error("Quiz generation failed. Please try again with a shorter document or fewer questions.")
+                        if st.session_state.astra.last_error:
+                            st.warning(f"Details: {st.session_state.astra.last_error}")
+
+    # Active quiz interface
+    if st.session_state.astra.quiz_active:
+        status = st.session_state.astra.get_quiz_status()
+
+        # Simple progress bar
+        st.progress(status['progress'] / status['total_questions'])
+        st.write(f"Question {status['progress'] + 1} of {status['total_questions']}")
+
+        # Current question
+        question = st.session_state.astra.get_current_question()
+        if question:
+            st.write("#### " + question['question'])
+
+            # Radio buttons for options
+            selected_option = st.radio(
+                "Choose your answer:",
+                ["A", "B", "C", "D"],
+                format_func=lambda x: f"{x}: {question['options'][x]}"
+            )
+
+            if st.button("Submit Answer"):
+                is_correct, explanation = st.session_state.astra.submit_answer(selected_option)
+
+                if is_correct:
+                    st.success("✅ Correct!")
+                else:
+                    st.error("❌ Incorrect!")
+
+                st.info(explanation)
+
+                if not st.session_state.astra.quiz_active:
+                    # Quiz completed
+                    st.success(f"Quiz completed! Final score: {status['score']}/{status['total_questions']}")
+                    if st.button("Start New Quiz"):
+                        st.rerun()
+                else:
+                    if st.button("Next Question"):
+                        st.rerun()
