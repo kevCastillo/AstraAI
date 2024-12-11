@@ -49,20 +49,22 @@
 
 # Step 4: Set Up Python Virtual Environment
 1. In PyCharm:
+2. Click 'astra_ai.py' and you will be prompted to create a virtual enviorment for your PyCharm Session, if not you may follow the instructions below.
    - Click "File" → "Settings" (Windows/Linux) | or "PyCharm" → "Preferences" (macOS)
    - Navigate to "Project: [ProjectName]" → "Python Interpreter"
    - Click gear icon → "Add"
    - Select "Virtualenv Environment" → "New environment"
    - Select Python 3.12 as base interpreter
    - Click "OK"
+   - 
 [Note: You may visit the link here to ensure Venv setup is configured properly: https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html]
 
-2. Open PyCharm terminal:
+3. Open PyCharm terminal:
    - View → Tool Windows → Terminal
    - Verify virtual environment is active (should see `(venv)` prefix)
 
 # Step 5: Install Dependencies
-1. Create `requirements.txt` in project root:
+1. Ensure `requirements.txt` in project root:
    ' streamlit==1.31.0
    PyPDF2==3.0.1
    python-docx==1.0.0
