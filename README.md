@@ -55,6 +55,7 @@
    - Select "Virtualenv Environment" → "New environment"
    - Select Python 3.12 as base interpreter
    - Click "OK"
+[Note: You may visit the link here to ensure Venv setup is configured properly: https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html]
 
 2. Open PyCharm terminal:
    - View → Tool Windows → Terminal
