@@ -16,7 +16,7 @@ class AstraAI:
     def __init__(self) -> None:
         """Initialize all class attributes"""
         # Model configuration
-        self.model: str = "tinyllama"  # Specify exact model version
+        self.model: str = "llama3.2"  # Specify exact model version
 
         # Conversation state
         self.conversation_active: bool = True
@@ -204,6 +204,14 @@ class AstraAI:
         self.document_name = None
         self.end_quiz()
         self.last_error = None
+
+    def end_quiz(self) -> None:
+        """End the current quiz and reset quiz-related attributes"""
+        self.quiz_active = False
+        self.current_quiz = []
+        self.quiz_progress = 0
+        self.quiz_score = 0
+        self.total_questions = 0
 
     def generate_quiz(self, num_questions: int = 5) -> bool:
         """
