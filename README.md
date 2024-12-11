@@ -86,6 +86,8 @@
    ```
 
 2. Create `temp` directory if it doesn't exist
+   - **Right Click** the 'AstraAI' folder/project root
+   - **Click** 'New' -> 'Directory' and then name it 'temp'
 
 # Step 7: Run the Application
 1. In PyCharm terminal:
