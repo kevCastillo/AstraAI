@@ -1,7 +1,7 @@
 # ASTRA AI Setup Guide for Beginners
 
 # Prerequisites
-- A computer with at least 4GB RAM (8GB recommended)
+- A computer with at least 8GB RAM (16GB recommended)
 - Internet connection
 - Windows, macOS, or Linux operating system
 
