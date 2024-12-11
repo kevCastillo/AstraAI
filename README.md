@@ -43,7 +43,7 @@
 4. Clone the repository:
    - Open PyCharm
    - Click "Get from VCS" on welcome screen
-   - Paste repository URL: `[Your Repository URL]`
+   - Paste repository URL: `(https://github.com/kevCastillo/AstraAI.git)`
    - Choose directory for project "C:\Users\[NameHere]\PycharmProjects\AstraAI
    - Click "Clone"
 
